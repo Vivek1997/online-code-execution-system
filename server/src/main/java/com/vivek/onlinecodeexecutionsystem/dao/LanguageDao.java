@@ -1,4 +1,4 @@
-package com.vivek.onlinecodeexecutionsystem.dao.impl;
+package com.vivek.onlinecodeexecutionsystem.dao;
 
 import com.vivek.onlinecodeexecutionsystem.model.Language;
 import org.springframework.stereotype.Repository;
