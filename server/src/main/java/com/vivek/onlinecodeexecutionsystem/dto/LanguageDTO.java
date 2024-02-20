@@ -1,8 +1,5 @@
 package com.vivek.onlinecodeexecutionsystem.dto;
 
-import com.vivek.onlinecodeexecutionsystem.model.Language;
-import org.modelmapper.ModelMapper;
-
 public class LanguageDTO {
     private int id;
     private String name;
@@ -31,11 +28,11 @@ public class LanguageDTO {
         this.name = name;
     }
 
-    public Language toEntity(ModelMapper modelMapper) {
-        return modelMapper.map(this, Language.class);
-    }
-
-    public static LanguageDTO fromEntity(Language language, ModelMapper modelMapper) {
-        return modelMapper.map(language, LanguageDTO.class);
+    @Override
+    public String toString() {
+        return "LanguageDTO{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                '}';
     }
 }

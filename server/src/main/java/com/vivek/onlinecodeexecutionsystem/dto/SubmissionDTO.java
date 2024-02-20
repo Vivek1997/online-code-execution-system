@@ -9,11 +9,14 @@ public class SubmissionDTO {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private long id;
     private String sourceCode;
-    private long languageId;
+    private int languageId;
     private String input;
     private String expectedOutput;
 
-    public SubmissionDTO(long id, String sourceCode, long languageId, String input, String expectedOutput) {
+    public SubmissionDTO() {
+    }
+
+    public SubmissionDTO(long id, String sourceCode, int languageId, String input, String expectedOutput) {
         this.id = id;
         this.sourceCode = sourceCode;
         this.languageId = languageId;
@@ -21,7 +24,7 @@ public class SubmissionDTO {
         this.expectedOutput = expectedOutput;
     }
 
-    public SubmissionDTO(String sourceCode, long languageId, String input, String expectedOutput) {
+    public SubmissionDTO(String sourceCode, int languageId, String input, String expectedOutput) {
         this.sourceCode = sourceCode;
         this.languageId = languageId;
         this.input = input;
@@ -44,11 +47,11 @@ public class SubmissionDTO {
         this.sourceCode = sourceCode;
     }
 
-    public long getLanguageId() {
+    public int getLanguageId() {
         return languageId;
     }
 
-    public void setLanguageId(long languageId) {
+    public void setLanguageId(int languageId) {
         this.languageId = languageId;
     }
 
