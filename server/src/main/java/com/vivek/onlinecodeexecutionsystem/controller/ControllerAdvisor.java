@@ -5,7 +5,6 @@ import com.vivek.onlinecodeexecutionsystem.exceptions.NoSuchLanguageException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.time.LocalDateTime;
@@ -16,7 +15,7 @@ import java.util.Map;
 public class ControllerAdvisor extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(InvalidSubmissionException.class)
-    public ResponseEntity<Object> handleInvalidSubmissionException(InvalidSubmissionException ex, WebRequest request) {
+    public ResponseEntity<Object> handleInvalidSubmissionException(InvalidSubmissionException ex) {
         Map<String, Object> map = new HashMap<>();
         map.put("timestamp", LocalDateTime.now());
         map.put("message", ex.getMessage());
