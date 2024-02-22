@@ -8,22 +8,36 @@ import com.vivek.onlinecodeexecutionsystem.model.Submission;
 import com.vivek.onlinecodeexecutionsystem.service.LanguageService;
 import com.vivek.onlinecodeexecutionsystem.service.SubmissionService;
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.connection.stream.RecordId;
+import org.springframework.data.redis.connection.stream.StreamRecords;
+import org.springframework.data.redis.connection.stream.StringRecord;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Repository
 public class SubmissionServiceImpl implements SubmissionService {
+
+    private final Logger logger = LoggerFactory.getLogger(SubmissionServiceImpl.class);
 
     private final SubmissionDao submissionDao;
     private final LanguageService languageService;
     private final ModelMapper modelMapper;
 
+    private final StringRedisTemplate stringRedisTemplate;
+
     @Autowired
-    public SubmissionServiceImpl(SubmissionDao submissionDao, LanguageService languageService, ModelMapper modelMapper) {
+    public SubmissionServiceImpl(SubmissionDao submissionDao, LanguageService languageService, ModelMapper modelMapper, StringRedisTemplate stringRedisTemplate) {
         this.submissionDao = submissionDao;
         this.languageService = languageService;
         this.modelMapper = modelMapper;
+        this.stringRedisTemplate = stringRedisTemplate;
     }
 
 
@@ -38,6 +52,11 @@ public class SubmissionServiceImpl implements SubmissionService {
     public long submit(SubmissionDTO submissionDTO) {
         Submission submission = convertToSubmissionEntity(submissionDTO);
         submission = submissionDao.save(submission);
+        Map<String, String> map = new HashMap<>();
+        map.put("submissionId", String.valueOf(submission.getId()));
+        StringRecord stringRecord = StreamRecords.newRecord().ofStrings(map).withStreamKey("submission");
+        RecordId recordId = stringRedisTemplate.opsForStream().add(stringRecord);
+        logger.info("Record inserted to stream with id: {}", recordId);
         return submission.getId();
     }
 
