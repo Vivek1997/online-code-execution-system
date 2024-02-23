@@ -12,7 +12,7 @@ public class Submission {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private long id;
-    
+
     @Column(name = "timestamp", insertable = false, updatable = false)
     private Timestamp timeStamp;
     @Column(name = "source_code")
@@ -26,6 +26,10 @@ public class Submission {
     private String input;
     @Column(name = "expected_output")
     private String expectedOutput;
+    @Column(name = "output")
+    private String output;
+    @Column(name = "status")
+    private Status status;
 
 
     public Submission() {
@@ -86,6 +90,22 @@ public class Submission {
         this.expectedOutput = expectedOutput;
     }
 
+    public String getOutput() {
+        return output;
+    }
+
+    public void setOutput(String output) {
+        this.output = output;
+    }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public void setStatus(Status status) {
+        this.status = status;
+    }
+
     @Override
     public String toString() {
         return "Submission{" +
@@ -95,6 +115,8 @@ public class Submission {
                 ", language=" + language +
                 ", input='" + input + '\'' +
                 ", expectedOutput='" + expectedOutput + '\'' +
+                ", output='" + output + '\'' +
+                ", status=" + status +
                 '}';
     }
 }

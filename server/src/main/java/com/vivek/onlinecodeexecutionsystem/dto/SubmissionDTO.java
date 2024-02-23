@@ -3,15 +3,26 @@ package com.vivek.onlinecodeexecutionsystem.dto;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-@JsonIgnoreProperties(value = "id", allowGetters = true)
+import java.sql.Timestamp;
+
+@JsonIgnoreProperties(value = {"id", "output", "status"}, allowGetters = true, ignoreUnknown = true)
 public class SubmissionDTO {
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private long id;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private Timestamp timeStamp;
     private String sourceCode;
     private int languageId;
     private String input;
     private String expectedOutput;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private String output;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private String status;
 
     public SubmissionDTO() {
     }
@@ -71,14 +82,41 @@ public class SubmissionDTO {
         this.expectedOutput = expectedOutput;
     }
 
+    public String getOutput() {
+        return output;
+    }
+
+    public void setOutput(String output) {
+        this.output = output;
+    }
+
+    public Timestamp getTimeStamp() {
+        return timeStamp;
+    }
+
+    public void setTimeStamp(Timestamp timeStamp) {
+        this.timeStamp = timeStamp;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
     @Override
     public String toString() {
         return "SubmissionDTO{" +
                 "id=" + id +
+                ", timeStamp=" + timeStamp +
                 ", sourceCode='" + sourceCode + '\'' +
                 ", languageId=" + languageId +
                 ", input='" + input + '\'' +
                 ", expectedOutput='" + expectedOutput + '\'' +
+                ", output='" + output + '\'' +
+                ", status='" + status + '\'' +
                 '}';
     }
 }

@@ -4,6 +4,7 @@ import com.vivek.onlinecodeexecutionsystem.dao.SubmissionDao;
 import com.vivek.onlinecodeexecutionsystem.dto.SubmissionDTO;
 import com.vivek.onlinecodeexecutionsystem.exceptions.InvalidSubmissionException;
 import com.vivek.onlinecodeexecutionsystem.model.Language;
+import com.vivek.onlinecodeexecutionsystem.model.Status;
 import com.vivek.onlinecodeexecutionsystem.model.Submission;
 import com.vivek.onlinecodeexecutionsystem.service.LanguageService;
 import com.vivek.onlinecodeexecutionsystem.service.SubmissionService;
@@ -51,12 +52,13 @@ public class SubmissionServiceImpl implements SubmissionService {
     @Transactional
     public long submit(SubmissionDTO submissionDTO) {
         Submission submission = convertToSubmissionEntity(submissionDTO);
+        submission.setStatus(Status.QUEUED);
         submission = submissionDao.save(submission);
         Map<String, String> map = new HashMap<>();
         map.put("submissionId", String.valueOf(submission.getId()));
+        logger.info("Created submission:{} in db writing to redis", submission.getId());
         StringRecord stringRecord = StreamRecords.newRecord().ofStrings(map).withStreamKey("submission");
         RecordId recordId = stringRedisTemplate.opsForStream().add(stringRecord);
-        logger.info("Record inserted to stream with id: {}", recordId);
         return submission.getId();
     }
 
