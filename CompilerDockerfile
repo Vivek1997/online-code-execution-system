@@ -1,0 +1,23 @@
+FROM buildpack-deps:bookworm
+
+RUN set -xe && \
+    curl -fSsL "https://download.oracle.com/java/17/latest/jdk-17_linux-x64_bin.tar.gz" -o /tmp/openjdk17.tar.gz && \
+    mkdir /usr/local/openjdk17 && \
+    tar -xf /tmp/openjdk17.tar.gz -C /usr/local/openjdk17 --strip-components=1 && \
+    rm /tmp/openjdk17.tar.gz && \
+    ln -s /usr/local/openjdk17/bin/javac /usr/local/bin/javac && \
+    ln -s /usr/local/openjdk17/bin/java /usr/local/bin/java && \
+    ln -s /usr/local/openjdk17/bin/jar /usr/local/bin/jar
+
+RUN set -xe && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends git libcap-dev && \
+    rm -rf /var/lib/apt/lists/* && \
+    git clone https://github.com/ioi/isolate.git /tmp/isolate && \
+    cd /tmp/isolate && \
+    git checkout v1.10.1 && \
+    make -j$(nproc) install && \
+    rm -rf /tmp/*
+ENV BOX_ROOT /var/local/lib/isolate
+
+CMD ["/bin/bash"]

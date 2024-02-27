@@ -12,7 +12,7 @@ public class RedisStandaloneConfig {
 
     @Bean
     RedisConnectionFactory jedisConnectionFactory() {
-        return new JedisConnectionFactory(new RedisStandaloneConfiguration());
+        return new JedisConnectionFactory(new RedisStandaloneConfiguration("redis"));
     }
 
 

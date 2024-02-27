@@ -3,7 +3,9 @@ package com.vivek.onlinecodeexecutionsystem.configuration;
 import com.vivek.onlinecodeexecutionsystem.listener.SubmissionStreamListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -31,6 +33,13 @@ public class RedisSubmissionStreamConfig {
     @Value("${stream.key.group-name}")
     private String streamGroupName;
 
+    private final ApplicationContext applicationContext;
+
+    @Autowired
+    public RedisSubmissionStreamConfig(ApplicationContext applicationContext) {
+        this.applicationContext = applicationContext;
+    }
+
     @Bean
     public Subscription subscription(RedisConnectionFactory redisConnectionFactory, StringRedisTemplate stringRedisTemplate) throws UnknownHostException {
         createConsumerGroupIfNotExists(stringRedisTemplate, streamKey, streamGroupName);
@@ -45,7 +54,7 @@ public class RedisSubmissionStreamConfig {
 
         Subscription subscription = container.receive(
                 Consumer.from(streamGroupName, InetAddress.getLocalHost().getHostName()),
-                streamOffset, new SubmissionStreamListener(stringRedisTemplate, streamKey, streamGroupName));
+                streamOffset, new SubmissionStreamListener(applicationContext, stringRedisTemplate, streamKey, streamGroupName));
         container.start();
         return subscription;
     }

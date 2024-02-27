@@ -2,7 +2,6 @@ package com.vivek.onlinecodeexecutionsystem.exceptions;
 
 import org.springframework.web.bind.annotation.ResponseStatus;
 
-@ResponseStatus
 public class InvalidSubmissionException extends RuntimeException {
     public InvalidSubmissionException() {
     }
