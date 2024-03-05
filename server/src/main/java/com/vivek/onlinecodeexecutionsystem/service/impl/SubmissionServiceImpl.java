@@ -33,6 +33,7 @@ public class SubmissionServiceImpl implements SubmissionService {
 
     private final StringRedisTemplate stringRedisTemplate;
 
+
     @Autowired
     public SubmissionServiceImpl(SubmissionDao submissionDao, LanguageService languageService, ModelMapper modelMapper, StringRedisTemplate stringRedisTemplate) {
         this.submissionDao = submissionDao;
@@ -41,8 +42,6 @@ public class SubmissionServiceImpl implements SubmissionService {
         this.stringRedisTemplate = stringRedisTemplate;
     }
 
-
-    //TODO: Add throw
     @Override
     public Submission getSubmission(Long submissionId) throws InvalidSubmissionException {
         return submissionDao.findById(submissionId).orElseThrow(() -> new InvalidSubmissionException("Submission does not exists with id:" + submissionId));

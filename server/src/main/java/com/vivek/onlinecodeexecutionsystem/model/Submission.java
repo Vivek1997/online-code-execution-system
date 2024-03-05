@@ -31,6 +31,9 @@ public class Submission {
     @Column(name = "status")
     private Status status;
 
+    @Column(name = "compile_output")
+    private String compileOutput;
+
 
     public Submission() {
     }
@@ -106,17 +109,11 @@ public class Submission {
         this.status = status;
     }
 
-    @Override
-    public String toString() {
-        return "Submission{" +
-                "id=" + id +
-                ", timeStamp=" + timeStamp +
-                ", sourceCode='" + sourceCode + '\'' +
-                ", language=" + language +
-                ", input='" + input + '\'' +
-                ", expectedOutput='" + expectedOutput + '\'' +
-                ", output='" + output + '\'' +
-                ", status=" + status +
-                '}';
+    public String getCompileOutput() {
+        return compileOutput;
+    }
+
+    public void setCompileOutput(String compileOutput) {
+        this.compileOutput = compileOutput;
     }
 }

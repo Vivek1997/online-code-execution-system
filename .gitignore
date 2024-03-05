@@ -55,4 +55,5 @@ build/
 
 ### VS Code ###
 .vscode/
+local-data/
 
