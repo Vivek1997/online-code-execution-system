@@ -207,8 +207,9 @@ public class SubmissionServiceImpl implements SubmissionService {
     private String[] getParsedCompilingCommand(Submission submission) {
         String[] commandArr = {"isolate", "--cg", "-s", "-b", String.valueOf(submission.getId()), "--meta", "metadata.txt",
                 "--stderr-to-stdout", "--stdin", "/dev/null",
-                "--time", MAX_CPU_TIME_LIMIT, "--extra-time", MAX_CPU_EXTRA_TIME_LIMIT, "--wall-time", MAX_WALL_TIME_LIMIT,
-                "--stack", MAX_STACK_LIMIT, "-p" + MAX_MAX_PROCESSES_AND_OR_THREADS, "--cg-mem=" + MAX_MEMORY_LIMIT, "--fsize", MAX_FILE_SIZE,
+                "--time", String.valueOf(MAX_CPU_TIME_LIMIT), "--extra-time", String.valueOf(MAX_CPU_EXTRA_TIME_LIMIT),
+                "--wall-time", String.valueOf(MAX_WALL_TIME_LIMIT), "--stack", String.valueOf(MAX_STACK_LIMIT),
+                "-p" + MAX_MAX_PROCESSES_AND_OR_THREADS, "--cg-mem=" + MAX_MEMORY_LIMIT, "--fsize", String.valueOf(MAX_FILE_SIZE),
                 "-E", "HOME=/tmp", "-E", "PATH=\"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\"",
                 "-d", "/etc:noexec", "--run", "--", "/bin/bash", "compile.sh"};
 
@@ -253,14 +254,14 @@ public class SubmissionServiceImpl implements SubmissionService {
 
     private String[] getParsedRunCommand(Submission submission) {
         String[] runCommand = {"isolate", "--cg", "-s", "-b", String.valueOf(submission.getId()), "--meta", "run_metadata.txt",
-                "--time", MAX_CPU_TIME_LIMIT,
-                "--extra-time", MAX_CPU_EXTRA_TIME_LIMIT,
-                "--wall-time", MAX_WALL_TIME_LIMIT,
-                "--stack", MAX_STACK_LIMIT,
+                "--time", String.valueOf(MAX_CPU_TIME_LIMIT),
+                "--extra-time", String.valueOf(MAX_CPU_EXTRA_TIME_LIMIT),
+                "--wall-time", String.valueOf(MAX_WALL_TIME_LIMIT),
+                "--stack", String.valueOf(MAX_STACK_LIMIT),
                 "-p" + MAX_MAX_PROCESSES_AND_OR_THREADS,
                 "--cg-timing",
                 "--cg-mem=" + MAX_MEMORY_LIMIT,
-                "--fsize", MAX_FILE_SIZE,
+                "--fsize", String.valueOf(MAX_FILE_SIZE),
                 "-E", "HOME=/tmp",
                 "-E", "PATH=\"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\"",
                 "-d", "/etc:noexec",
