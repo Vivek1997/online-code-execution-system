@@ -90,6 +90,11 @@ public class SubmissionServiceImpl implements SubmissionService {
             submissionDao.save(submission);
         }
         //execute
+        try {
+            run(submission, directories);
+        } catch (IOException | InterruptedException e) {
+            LOGGER.error("Error in run");
+        }
         //destroy sandbox
         /*try {
             destroySandbox(submission);
@@ -118,6 +123,9 @@ public class SubmissionServiceImpl implements SubmissionService {
 
         LOGGER.info("Writing source code to {}", sourceFile);
         Files.write(Path.of(sourceFile), submission.getSourceCode().getBytes());
+        LOGGER.info("Writing STDIN  to {}", sourceFile);
+        if (submission.getStdIn() != null)
+            Files.write(Path.of(stdinFile), submission.getStdIn().getBytes());
 
         directories.put("sandboxDirectory", sandboxDirectory);
         directories.put("boxDir", boxDir);
@@ -205,6 +213,60 @@ public class SubmissionServiceImpl implements SubmissionService {
                 "-d", "/etc:noexec", "--run", "--", "/bin/bash", "compile.sh"};
 
         return commandArr;
+    }
+
+
+    private boolean run(Submission submission, Map<String, String> directories) throws IOException, InterruptedException {
+        String sandboxDir = directories.get("sandboxDirectory");
+        String boxDir = directories.get("boxDir");
+        String stdIn = directories.get("stdinFile");
+        String stdOut = directories.get("stdoutFile");
+        String stdErr = directories.get("stderrFile");
+        String runScript = boxDir + "/run.sh";
+        File runScriptFile = new File(runScript);
+        Files.write(runScriptFile.toPath(), submission.getLanguage().getRunCommand().getBytes());
+        boolean permissionStatus = runScriptFile.setExecutable(true, true);
+        if (!permissionStatus) {
+            LOGGER.error("Unable to make run script executable");
+            submission.setStatus(Status.BOXERR);
+            return false;
+        }
+
+        String[] runCommand = getParsedRunCommand(submission);
+        ProcessBuilder processBuilder = new ProcessBuilder(runCommand);
+        processBuilder.directory(new File(sandboxDir));
+        processBuilder.redirectInput(new File(stdIn));
+        processBuilder.redirectError(new File(stdErr));
+        processBuilder.redirectOutput(new File(stdOut));
+        LOGGER.info("Running submission with command:{}", processBuilder.command());
+        Process process = processBuilder.start();
+        boolean exitedInTime = process.waitFor(30, TimeUnit.SECONDS);
+        if (!exitedInTime) {
+            process.destroyForcibly();
+            LOGGER.error("Compiling process took more than 30 seconds killing!!");
+            submission.setStatus(Status.TLE);
+            return false;
+        }
+        return false;
+
+    }
+
+    private String[] getParsedRunCommand(Submission submission) {
+        String[] runCommand = {"isolate", "--cg", "-s", "-b", String.valueOf(submission.getId()), "--meta", "run_metadata.txt",
+                "--time", MAX_CPU_TIME_LIMIT,
+                "--extra-time", MAX_CPU_EXTRA_TIME_LIMIT,
+                "--wall-time", MAX_WALL_TIME_LIMIT,
+                "--stack", MAX_STACK_LIMIT,
+                "-p" + MAX_MAX_PROCESSES_AND_OR_THREADS,
+                "--cg-timing",
+                "--cg-mem=" + MAX_MEMORY_LIMIT,
+                "--fsize", MAX_FILE_SIZE,
+                "-E", "HOME=/tmp",
+                "-E", "PATH=\"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\"",
+                "-d", "/etc:noexec",
+                "--run",
+                "--", "/bin/bash", "run.sh"};
+        return runCommand;
     }
 
     private String createSandbox(Submission submission) throws IOException {
