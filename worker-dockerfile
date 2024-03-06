@@ -15,15 +15,7 @@ COPY worker ./worker
 RUN mvn clean package -DskipTests
 
 # Use a base image with JRE installed
-FROM compilers:latest AS runtime
-
-# Set the working directory in the container
+FROM compiler:test AS worker
 WORKDIR /app
-
-# Copy the JAR file built in the previous stage to the container
 COPY --from=build /app/worker/target/*.jar worker.jar
-
-#Don't Expose the port your application runs on
-#EXPOSE 8080
-# Command to run the application
 CMD ["java", "-jar", "worker.jar"]

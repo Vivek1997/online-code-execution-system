@@ -10,10 +10,6 @@ public class Utils {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Utils.class);
 
-    public static void createDirectory() {
-
-    }
-
     public static void createFile(String path) {
         File file = new File(path);
         try {
@@ -23,7 +19,6 @@ public class Utils {
                     LOGGER.warn("Deleted file as it already exists:{}", path);
                 else
                     LOGGER.error("Unable to delete file:{}", path);
-                //TODO: Handle if unable to create file
             }
 
             if (file.createNewFile())

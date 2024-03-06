@@ -9,6 +9,20 @@ RUN set -xe && \
     ln -s /usr/local/openjdk17/bin/java /usr/local/bin/java && \
     ln -s /usr/local/openjdk17/bin/jar /usr/local/bin/jar
 
+
+RUN set -xe && \
+    curl -fSsL "https://www.python.org/ftp/python/3.8.1/Python-3.8.1.tar.xz" -o /tmp/python-3.8.1.tar.xz && \
+    mkdir /tmp/python-3.8.1 && \
+    tar -xf /tmp/python-3.8.1.tar.xz -C /tmp/python-3.8.1 --strip-components=1 && \
+    rm /tmp/python-3.8.1.tar.xz && \
+    cd /tmp/python-3.8.1 && \
+    ./configure \
+    --prefix=/usr/local/python-3.8.1 && \
+    make -j$(nproc) && \
+    make -j$(nproc) install && \
+    rm -rf /tmp/*;
+
+
 RUN set -xe && \
     apt-get update && \
     apt-get install -y --no-install-recommends git libcap-dev && \
