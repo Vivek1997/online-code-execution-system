@@ -51,7 +51,7 @@ public class Submission {
     private Float wallTimeLimit;
 
     @Column(name = "memory_limit")
-    private Float memoryLimit;
+    private Integer memoryLimit;
 
     @Column(name = "stack_limit")
     private Integer stackLimit;
@@ -76,6 +76,9 @@ public class Submission {
 
     @Column(name = "time")
     private Float time;
+
+    @Column(name = "memory")
+    private Integer memory;
 
     @Column(name = "execution_host")
     private String executionHost;
@@ -193,11 +196,11 @@ public class Submission {
         this.wallTimeLimit = wallTimeLimit;
     }
 
-    public Float getMemoryLimit() {
+    public Integer getMemoryLimit() {
         return memoryLimit;
     }
 
-    public void setMemoryLimit(Float memoryLimit) {
+    public void setMemoryLimit(Integer memoryLimit) {
         this.memoryLimit = memoryLimit;
     }
 
@@ -271,5 +274,13 @@ public class Submission {
 
     public void setExecutionHost(String executionHost) {
         this.executionHost = executionHost;
+    }
+
+    public Integer getMemory() {
+        return memory;
+    }
+
+    public void setMemory(Integer memory) {
+        this.memory = memory;
     }
 }

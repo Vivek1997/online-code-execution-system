@@ -10,10 +10,6 @@ public class Utils {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Utils.class);
 
-    public static void createDirectory() {
-
-    }
-
     public static void createFile(String path) {
         File file = new File(path);
         try {

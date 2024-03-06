@@ -3,6 +3,7 @@ package com.vivek.onlinecodeexecutionsystem.dto;
 public class LanguageDTO {
     private int id;
     private String name;
+    private String version;
 
     public LanguageDTO() {
     }
@@ -28,11 +29,20 @@ public class LanguageDTO {
         this.name = name;
     }
 
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
+
     @Override
     public String toString() {
         return "LanguageDTO{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
+                ", version='" + version + '\'' +
                 '}';
     }
 }

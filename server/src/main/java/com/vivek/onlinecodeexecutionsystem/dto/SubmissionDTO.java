@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.sql.Timestamp;
 
 @JsonIgnoreProperties(
-        value = {"id", "createdAt", "finishedAt", "stdOut", "status", "compileOutput", "stdErr", "exitCode", "exitSignal", "message", "wallTime", "time", "executionHost"},
+        value = {"id", "createdAt", "finishedAt", "stdOut", "status", "compileOutput", "stdErr", "exitCode", "exitSignal", "message", "wallTime", "time", "executionHost", "memory"},
         allowGetters = true,
         ignoreUnknown = true
 )
@@ -62,6 +62,9 @@ public class SubmissionDTO {
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String executionHost;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private Integer memory;
 
     public long getId() {
         return id;
@@ -253,5 +256,13 @@ public class SubmissionDTO {
 
     public void setExecutionHost(String executionHost) {
         this.executionHost = executionHost;
+    }
+
+    public Integer getMemory() {
+        return memory;
+    }
+
+    public void setMemory(Integer memory) {
+        this.memory = memory;
     }
 }

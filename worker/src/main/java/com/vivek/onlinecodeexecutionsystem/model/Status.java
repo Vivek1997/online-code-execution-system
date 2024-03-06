@@ -18,4 +18,17 @@ public enum Status {
     public int getCode() {
         return code;
     }
+
+    public static Status findRuntimeErrorByStatusCode(Integer exitSignal) {
+        if (exitSignal == null)
+            return Status.OTHER;
+        Status status = switch (exitSignal) {
+            case 11 -> Status.SIGSEGV;
+            case 25 -> Status.SIGXFSZ;
+            case 8 -> Status.SIGFPE;
+            case 6 -> Status.SIGABRT;
+            default -> Status.OTHER;
+        };
+        return status;
+    }
 }

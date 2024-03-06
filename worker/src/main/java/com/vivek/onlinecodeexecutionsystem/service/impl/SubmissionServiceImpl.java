@@ -7,6 +7,7 @@ import com.vivek.onlinecodeexecutionsystem.service.SubmissionService;
 import com.vivek.onlinecodeexecutionsystem.utility.RedisUtils;
 import com.vivek.onlinecodeexecutionsystem.utility.Utils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +19,8 @@ import org.springframework.stereotype.Service;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -25,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static com.vivek.onlinecodeexecutionsystem.constants.DirectoryConstants.*;
-import static com.vivek.onlinecodeexecutionsystem.constants.ExecutionConfig.*;
+import static com.vivek.onlinecodeexecutionsystem.constants.ExecutionConfig.MAX_WALL_TIME_LIMIT;
 
 @Service
 public class SubmissionServiceImpl implements SubmissionService {
@@ -51,11 +54,19 @@ public class SubmissionServiceImpl implements SubmissionService {
         LOGGER.info("Executing submissionId:{}", submissionId);
         Optional<Submission> optionalSubmission = submissionDao.findById(submissionId);
         if (optionalSubmission.isEmpty()) {
-            //TODO: Remove from queue and log since it does not exists in database
+            LOGGER.warn("Deleting submission id:{} since it does not exist in DB", submissionId);
+            RedisUtils.acknowledge(stringRedisTemplate, streamKey, streamGroupName, record.getId());
+            RedisUtils.deleteFromStream(stringRedisTemplate, streamKey, record.getId());
             return;
         }
         Submission submission = optionalSubmission.get();
         submission.setStatus(Status.PROCESS);
+        //TODO: set hostname
+        try {
+            submission.setExecutionHost(InetAddress.getLocalHost().getHostName());
+        } catch (UnknownHostException e) {
+            submission.setExecutionHost("UNKNOWN");
+        }
         submission = submissionDao.save(submission);
         perform(submission);
         //TODO: Add DB status
@@ -95,6 +106,8 @@ public class SubmissionServiceImpl implements SubmissionService {
         } catch (IOException | InterruptedException e) {
             LOGGER.error("Error in run");
         }
+        verify(submission, directories);
+        submissionDao.save(submission);
         //destroy sandbox
         /*try {
             destroySandbox(submission);
@@ -115,7 +128,7 @@ public class SubmissionServiceImpl implements SubmissionService {
         String stdinFile = sandboxDirectory + "/" + STDIN_FILE_NAME;
         String stdoutFile = sandboxDirectory + "/" + STDOUT_FILE_NAME;
         String stderrFile = sandboxDirectory + "/" + STDERR_FILE_NAME;
-        String metadataFile = sandboxDirectory + "/" + METADATA_FILE_NAME;
+        String metadataFile = sandboxDirectory + "/" + COMPILE_METADATA_FILE_NAME;
 
         for (String path : List.of(stdinFile, stdoutFile, stderrFile, metadataFile)) {
             Utils.createFile(path);
@@ -173,7 +186,7 @@ public class SubmissionServiceImpl implements SubmissionService {
         processBuilder.redirectErrorStream(true);
         LOGGER.info("Compiling submission with command:{}", processBuilder.command());
         Process process = processBuilder.start();
-        boolean exitedInTime = process.waitFor(30, TimeUnit.SECONDS);
+        boolean exitedInTime = process.waitFor((long) MAX_WALL_TIME_LIMIT + 5, TimeUnit.SECONDS);
         if (!exitedInTime) {
             process.destroyForcibly();
             LOGGER.error("Compiling process took more than 30 seconds killing!!");
@@ -190,14 +203,7 @@ public class SubmissionServiceImpl implements SubmissionService {
         if (exitValue == 0)
             return true;
 
-        Map<String, String> metadata = Arrays.stream(Files.readString(Path.of(metadataFile)).split("\n"))
-                .collect(Collectors.toMap
-                        (
-                                key -> key.split(":")[0],
-                                value -> value.split(":")[1]
-                        )
-                );
-
+        Map<String, String> metadata = parseMetadata(Path.of(metadataFile));
         if (metadata.getOrDefault("status", "").equals("TO"))
             submission.setCompileOutput("Compilation Time out");
         submission.setStatus(Status.CE);
@@ -205,19 +211,28 @@ public class SubmissionServiceImpl implements SubmissionService {
     }
 
     private String[] getParsedCompilingCommand(Submission submission) {
-        String[] commandArr = {"isolate", "--cg", "-s", "-b", String.valueOf(submission.getId()), "--meta", "metadata.txt",
+        String[] commandArr = {"isolate", "--cg", "-s", "-b", String.valueOf(submission.getId()),
+                "--meta", COMPILE_METADATA_FILE_NAME,
                 "--stderr-to-stdout", "--stdin", "/dev/null",
-                "--time", String.valueOf(MAX_CPU_TIME_LIMIT), "--extra-time", String.valueOf(MAX_CPU_EXTRA_TIME_LIMIT),
-                "--wall-time", String.valueOf(MAX_WALL_TIME_LIMIT), "--stack", String.valueOf(MAX_STACK_LIMIT),
-                "-p" + MAX_MAX_PROCESSES_AND_OR_THREADS, "--cg-mem=" + MAX_MEMORY_LIMIT, "--fsize", String.valueOf(MAX_FILE_SIZE),
-                "-E", "HOME=/tmp", "-E", "PATH=\"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\"",
-                "-d", "/etc:noexec", "--run", "--", "/bin/bash", "compile.sh"};
+                "--time", String.valueOf(submission.getCpuTimeLimit()),
+                "--extra-time", String.valueOf(submission.getCpuExtraTimeLimit()),
+                "--wall-time", String.valueOf(submission.getWallTimeLimit()),
+                "--stack", String.valueOf(submission.getStackLimit()),
+                "-p" + submission.getMaxProcessesAndOrThreadsLimit(),
+                "--cg-mem=" + submission.getMemoryLimit(),
+                "--fsize", String.valueOf(submission.getMaxFileSizeLimit()),
+                "-E", "HOME=/tmp",
+                "-E", "PATH=\"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\"",
+                "-d", "/etc:noexec",
+                "--run",
+                "--",
+                "/bin/bash", "compile.sh"};
 
         return commandArr;
     }
 
 
-    private boolean run(Submission submission, Map<String, String> directories) throws IOException, InterruptedException {
+    private void run(Submission submission, Map<String, String> directories) throws IOException, InterruptedException {
         String sandboxDir = directories.get("sandboxDirectory");
         String boxDir = directories.get("boxDir");
         String stdIn = directories.get("stdinFile");
@@ -230,9 +245,8 @@ public class SubmissionServiceImpl implements SubmissionService {
         if (!permissionStatus) {
             LOGGER.error("Unable to make run script executable");
             submission.setStatus(Status.BOXERR);
-            return false;
+            return;
         }
-
         String[] runCommand = getParsedRunCommand(submission);
         ProcessBuilder processBuilder = new ProcessBuilder(runCommand);
         processBuilder.directory(new File(sandboxDir));
@@ -241,33 +255,94 @@ public class SubmissionServiceImpl implements SubmissionService {
         processBuilder.redirectOutput(new File(stdOut));
         LOGGER.info("Running submission with command:{}", processBuilder.command());
         Process process = processBuilder.start();
-        boolean exitedInTime = process.waitFor(30, TimeUnit.SECONDS);
+        boolean exitedInTime = process.waitFor((long) MAX_WALL_TIME_LIMIT + 5, TimeUnit.SECONDS);
         if (!exitedInTime) {
             process.destroyForcibly();
-            LOGGER.error("Compiling process took more than 30 seconds killing!!");
+            LOGGER.error("Compiling process took more than {} seconds killing!!", MAX_WALL_TIME_LIMIT + 5);
             submission.setStatus(Status.TLE);
-            return false;
         }
-        return false;
-
     }
 
     private String[] getParsedRunCommand(Submission submission) {
-        String[] runCommand = {"isolate", "--cg", "-s", "-b", String.valueOf(submission.getId()), "--meta", "run_metadata.txt",
-                "--time", String.valueOf(MAX_CPU_TIME_LIMIT),
-                "--extra-time", String.valueOf(MAX_CPU_EXTRA_TIME_LIMIT),
-                "--wall-time", String.valueOf(MAX_WALL_TIME_LIMIT),
-                "--stack", String.valueOf(MAX_STACK_LIMIT),
-                "-p" + MAX_MAX_PROCESSES_AND_OR_THREADS,
+        String[] runCommand = {"isolate", "--cg", "-s", "-b", String.valueOf(submission.getId()),
+                "--meta", RUN_METADATA_FILE_NAME,
+                "--time", String.valueOf(submission.getCpuTimeLimit()),
+                "--extra-time", String.valueOf(submission.getCpuExtraTimeLimit()),
+                "--wall-time", String.valueOf(submission.getWallTimeLimit()),
+                "--stack", String.valueOf(submission.getStackLimit()),
+                "-p" + submission.getMaxProcessesAndOrThreadsLimit(),
                 "--cg-timing",
-                "--cg-mem=" + MAX_MEMORY_LIMIT,
-                "--fsize", String.valueOf(MAX_FILE_SIZE),
+                "--cg-mem=" + submission.getMemoryLimit(),
+                "--fsize", String.valueOf(submission.getMaxFileSizeLimit()),
                 "-E", "HOME=/tmp",
                 "-E", "PATH=\"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\"",
                 "-d", "/etc:noexec",
                 "--run",
                 "--", "/bin/bash", "run.sh"};
         return runCommand;
+    }
+
+    private void verify(Submission submission, Map<String, String> directories) {
+        String sandboxDir = directories.get("sandboxDirectory");
+        Map<String, String> metadata = parseMetadata(Path.of(sandboxDir + "/" + RUN_METADATA_FILE_NAME));
+        String stdOut = directories.get("stdoutFile");
+        String stdErr = directories.get("stderrFile");
+        String programStdout = null;
+        try {
+            programStdout = Files.readString(Path.of(stdOut));
+        } catch (IOException e) {
+            LOGGER.error("Error in reading std out file", e);
+        }
+        submission.setStdOut(programStdout);
+        String programStderr = null;
+        try {
+            programStderr = Files.readString(Path.of(stdErr));
+        } catch (IOException e) {
+            LOGGER.error("Error in reading std err file", e);
+        }
+        submission.setStdErr(programStderr);
+        submission.setTime(NumberUtils.createFloat(metadata.getOrDefault("time", null)));
+        submission.setWallTime(NumberUtils.createFloat(metadata.getOrDefault("time-wall", null)));
+        submission.setMemory(NumberUtils.createInteger(metadata.getOrDefault("cg-mem", null)));
+        submission.setExitCode(NumberUtils.createInteger(metadata.getOrDefault("exitcode", "0")));
+        submission.setExitSignal(NumberUtils.createInteger(metadata.getOrDefault("exitsig", null)));
+        submission.setMessage(metadata.getOrDefault("message", null));
+
+        String statusStr = metadata.getOrDefault("status", "");
+        submission.setStatus(determineStatus(submission, statusStr));
+    }
+
+    private Status determineStatus(Submission submission, String status) {
+        if (status.equalsIgnoreCase("TO"))
+            return Status.TLE;
+        else if (status.equalsIgnoreCase("SG"))
+            return Status.findRuntimeErrorByStatusCode(submission.getExitSignal());
+        else if (status.equalsIgnoreCase("RE"))
+            return Status.NZEC;
+        else if (status.equalsIgnoreCase("XX"))
+            return Status.BOXERR;
+        else if (submission.getExpectedOutput() == null || submission.getExpectedOutput().trim().equalsIgnoreCase(submission.getStdOut().trim()))
+            return Status.AC;
+        else return Status.WA;
+    }
+
+    private Map<String, String> parseMetadata(Path metadataPath) {
+        Map<String, String> metadata = new HashMap<>();
+        try {
+
+            metadata = Arrays.stream(Files.readString(metadataPath).split("\n"))
+                    .collect(Collectors.toMap
+                            (
+                                    key -> key.split(":")[0],
+                                    value -> value.split(":")[1]
+                            )
+                    );
+        } catch (IOException e) {
+            LOGGER.error("Metadata file:{} does not exists", metadataPath);
+        }
+
+        return metadata;
+
     }
 
     private String createSandbox(Submission submission) throws IOException {
@@ -290,7 +365,7 @@ public class SubmissionServiceImpl implements SubmissionService {
         Process process = processBuilder.start();
         InputStream inputStream = process.getInputStream();
         String output = new String(inputStream.readAllBytes());
-        boolean exitSuccess = process.waitFor(30, TimeUnit.SECONDS);
+        boolean exitSuccess = process.waitFor((long) MAX_WALL_TIME_LIMIT + 5, TimeUnit.SECONDS);
         if (!exitSuccess)
             LOGGER.error("Unable to cleanup sandbox: {}", boxId);
         LOGGER.info("cleanup output:{}", output);
