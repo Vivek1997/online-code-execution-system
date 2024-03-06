@@ -19,7 +19,6 @@ public class Utils {
                     LOGGER.warn("Deleted file as it already exists:{}", path);
                 else
                     LOGGER.error("Unable to delete file:{}", path);
-                //TODO: Handle if unable to create file
             }
 
             if (file.createNewFile())

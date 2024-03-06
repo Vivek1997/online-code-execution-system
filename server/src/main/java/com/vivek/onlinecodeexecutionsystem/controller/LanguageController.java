@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.stream.Collectors;
 
-//TODO: use controller adivce for exception handling
 @RestController
 @RequestMapping("languages")
 public class LanguageController {

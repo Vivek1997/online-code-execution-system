@@ -61,7 +61,6 @@ public class SubmissionServiceImpl implements SubmissionService {
         }
         Submission submission = optionalSubmission.get();
         submission.setStatus(Status.PROCESS);
-        //TODO: set hostname
         try {
             submission.setExecutionHost(InetAddress.getLocalHost().getHostName());
         } catch (UnknownHostException e) {
@@ -69,12 +68,10 @@ public class SubmissionServiceImpl implements SubmissionService {
         }
         submission = submissionDao.save(submission);
         perform(submission);
-        //TODO: Add DB status
         RedisUtils.acknowledge(stringRedisTemplate, streamKey, streamGroupName, record.getId());
         RedisUtils.deleteFromStream(stringRedisTemplate, streamKey, record.getId());
     }
 
-    //TODO: perform should handle all the exceptions
     private void perform(Submission submission) {
         //Create work directory and sandbox
         Map<String, String> directories = null;
@@ -178,7 +175,6 @@ public class SubmissionServiceImpl implements SubmissionService {
         String compileOutputFile = sandboxDirectory + "/" + COMPILE_OUTPUT_FILE_NAME;
         Utils.createFile(compileOutputFile);
 
-        //TODO: Make parameters adjustable
         String[] parsedCommand = getParsedCompilingCommand(submission);
         ProcessBuilder processBuilder = new ProcessBuilder(parsedCommand);
         processBuilder.directory(new File(sandboxDirectory));
