@@ -106,11 +106,11 @@ public class SubmissionServiceImpl implements SubmissionService {
         verify(submission, directories);
         submissionDao.save(submission);
         //destroy sandbox
-        /*try {
+        try {
             destroySandbox(submission);
         } catch (IOException | InterruptedException e) {
             LOGGER.error("Error in destroying sandbox:{}", submission.getId(), e);
-        }*/
+        }
     }
 
     private Map<String, String> initializeWorkdir(Submission submission) throws IOException {
@@ -285,7 +285,8 @@ public class SubmissionServiceImpl implements SubmissionService {
         String stdErr = directories.get("stderrFile");
         String programStdout = null;
         try {
-            programStdout = Files.readString(Path.of(stdOut));
+            //To handle output from infinite loop
+            programStdout = Files.readString(Path.of(stdOut)).substring(0, 500);
         } catch (IOException e) {
             LOGGER.error("Error in reading std out file", e);
         }
