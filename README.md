@@ -30,6 +30,23 @@ Under the hood worker uses isolate library for running code in sandboxed environ
 
 ------------
 
+### How to run
+
+> docker compose -f compose-file.yml up --build
+
+Above command will spin up 4 containers
+
+1. server
+2. worker
+3. pgDB
+4. redis
+
+- Swagger UI is hosted on port http://localhost:8000/
+- Redis Insight can be accessed on port http://localhost:8001/
+- Postgres database can be connect on port 5432 using any db client
+
+------------
+
 ### Supported languages
 
 1. Java (openjdk 17)
