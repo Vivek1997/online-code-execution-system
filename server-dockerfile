@@ -12,7 +12,7 @@ COPY server ./server
 COPY worker ./worker
 
 # Build the application using Maven
-RUN mvn clean package -DskipTests
+RUN mvn clean package -pl server -DskipTests
 
 FROM  openjdk:17-alpine AS server
 WORKDIR /app

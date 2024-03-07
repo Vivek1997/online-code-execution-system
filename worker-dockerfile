@@ -12,10 +12,46 @@ COPY server ./server
 COPY worker ./worker
 
 # Build the application using Maven
-RUN mvn clean package -DskipTests
+RUN mvn clean package -pl worker -DskipTests
 
 # Use a base image with JRE installed
-FROM compiler:test AS worker
+
+FROM buildpack-deps:bookworm AS worker
+
+RUN set -xe && \
+    curl -fSsL "https://download.oracle.com/java/17/latest/jdk-17_linux-x64_bin.tar.gz" -o /tmp/openjdk17.tar.gz && \
+    mkdir /usr/local/openjdk17 && \
+    tar -xf /tmp/openjdk17.tar.gz -C /usr/local/openjdk17 --strip-components=1 && \
+    rm /tmp/openjdk17.tar.gz && \
+    ln -s /usr/local/openjdk17/bin/javac /usr/local/bin/javac && \
+    ln -s /usr/local/openjdk17/bin/java /usr/local/bin/java && \
+    ln -s /usr/local/openjdk17/bin/jar /usr/local/bin/jar
+
+
+RUN set -xe && \
+    curl -fSsL "https://www.python.org/ftp/python/3.8.1/Python-3.8.1.tar.xz" -o /tmp/python-3.8.1.tar.xz && \
+    mkdir /tmp/python-3.8.1 && \
+    tar -xf /tmp/python-3.8.1.tar.xz -C /tmp/python-3.8.1 --strip-components=1 && \
+    rm /tmp/python-3.8.1.tar.xz && \
+    cd /tmp/python-3.8.1 && \
+    ./configure \
+    --prefix=/usr/local/python-3.8.1 && \
+    make -j$(nproc) && \
+    make -j$(nproc) install && \
+    rm -rf /tmp/*;
+
+
+RUN set -xe && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends git libcap-dev && \
+    rm -rf /var/lib/apt/lists/* && \
+    git clone https://github.com/ioi/isolate.git /tmp/isolate && \
+    cd /tmp/isolate && \
+    git checkout v1.10.1 && \
+    make -j$(nproc) install && \
+    rm -rf /tmp/* \
+
+ENV BOX_ROOT /var/local/lib/isolate
 WORKDIR /app
 COPY --from=build /app/worker/target/*.jar worker.jar
 CMD ["java", "-jar", "worker.jar"]
