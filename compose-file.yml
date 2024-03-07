@@ -48,7 +48,6 @@ services:
     build:
       context: ./
       dockerfile: worker-dockerfile
-    container_name: worker
     networks:
       - oces
     volumes:
