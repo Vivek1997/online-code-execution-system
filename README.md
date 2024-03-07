@@ -32,7 +32,12 @@ Under the hood worker uses isolate library for running code in sandboxed environ
 
 ### How to run
 
+Start with only one replica
+
 > docker compose -f compose-file.yml up --build
+
+To start with 3 replica of worker
+> docker compose -f compose-file.yml up --build --scale worker=3
 
 Above command will spin up 4 containers
 
@@ -44,6 +49,9 @@ Above command will spin up 4 containers
 - Swagger UI is hosted on port http://localhost:8000/
 - Redis Insight can be accessed on port http://localhost:8001/
 - Postgres database can be connect on port 5432 using any db client
+
+To stop containers
+> docker compose -f compose-file.yml down
 
 ------------
 
