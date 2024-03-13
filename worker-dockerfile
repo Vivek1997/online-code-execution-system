@@ -49,7 +49,7 @@ RUN set -xe && \
     cd /tmp/isolate && \
     git checkout v1.10.1 && \
     make -j$(nproc) install && \
-    rm -rf /tmp/* \
+    rm -rf /tmp/*
 
 ENV BOX_ROOT /var/local/lib/isolate
 WORKDIR /app

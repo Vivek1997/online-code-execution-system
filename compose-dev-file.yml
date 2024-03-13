@@ -1,11 +1,11 @@
 version: '3'
 
 services:
-  pgDB:
+  pgDB-dev:
     image: postgres:16.2-alpine3.19
     container_name: pgDB
     networks:
-      - oces
+      - oces-dev
     ports:
       - "5432:5432"
     environment:
@@ -13,55 +13,39 @@ services:
       POSTGRES_PASSWORD: secret
       POSTGRES_DB: oces
     volumes:
-      - pg-data:/var/lib/postgresql/data
+      - pg-data-dev:/var/lib/postgresql/data
       - ./sql-scripts:/docker-entrypoint-initdb.d
     restart: unless-stopped
 
-  redis:
+  redis-dev:
     image: redis/redis-stack:7.2.0-v8
     container_name: redis
     networks:
-      - oces
+      - oces-dev
     ports:
       - "6379:6379"
       - "8001:8001"
     volumes:
-      - redis-data:/data
+      - redis-data-dev:/data
     environment:
       REDIS_ARGS: "--appendonly yes --appendfsync everysec"
     restart: unless-stopped
 
-  server:
-    build:
-      context: ./
-      dockerfile: server-dockerfile
-    container_name: server
-    networks:
-      - oces
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./logs:/app/logs
-    environment:
-      spring_profiles_active: "prod"
-    restart: unless-stopped
-
-  worker:
+  worker-dev:
     build:
       context: ./
       dockerfile: worker-dockerfile
     networks:
-      - oces
+      - oces-dev
     volumes:
       - ./logs:/app/logs
+    ports:
+      - "8002:8002"
     privileged: true
-    environment:
-      spring_profiles_active: "prod"
     restart: unless-stopped
-
 networks:
-  oces:
+  oces-dev:
 
 volumes:
-  pg-data:
-  redis-data:
+  pg-data-dev:
+  redis-data-dev:
