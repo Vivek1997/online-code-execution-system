@@ -1,18 +1,26 @@
 # Use a base image with Java and Maven installed
-FROM maven:3.9.5-sapmachine-17 AS build
+FROM openjdk:17-alpine AS build
 
 # Set the working directory in the container
 WORKDIR /app
 
+COPY mvnw .
+COPY .mvn .mvn
 # Copy the pom.xml file to the container
 COPY pom.xml .
 
-# Copy the source code to the container
 COPY server ./server
 COPY worker ./worker
 
+#Cache m2 repository
+RUN \
+    -- mount=type=cache,target=/root/.m2 \
+    ./mvnw dependency:resolve-plugins dependency:resolve
+
 # Build the application using Maven
-RUN mvn clean package -pl server -DskipTests
+RUN \
+    -- mount=type=cache,target=/root/.m2 \
+    ./mvnw package -pl server -DskipTests
 
 FROM  openjdk:17-alpine AS server
 WORKDIR /app

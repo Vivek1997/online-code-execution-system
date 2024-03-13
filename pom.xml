@@ -40,11 +40,8 @@
     <packaging>pom</packaging>
 
     <modules>
-
         <module>server</module>
-
         <module>worker</module>
-
     </modules>
     <dependencyManagement>
         <dependencies>
