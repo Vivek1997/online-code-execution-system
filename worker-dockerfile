@@ -1,20 +1,27 @@
 # Use a base image with Java and Maven installed
-FROM maven:3.9.5-sapmachine-17 AS build
+FROM openjdk:17-alpine AS build
 
 # Set the working directory in the container
 WORKDIR /app
 
+COPY mvnw .
+COPY .mvn .mvn
 # Copy the pom.xml file to the container
 COPY pom.xml .
 
-# Copy the source code to the container
 COPY server ./server
 COPY worker ./worker
 
-# Build the application using Maven
-RUN mvn clean package -pl worker -DskipTests
+#Cache m2 repository
+RUN \
+    -- mount=type=cache,target=/root/.m2 \
+    ./mvnw dependency:resolve-plugins dependency:resolve
 
-# Use a base image with JRE installed
+# Build the application using Maven
+RUN \
+    -- mount=type=cache,target=/root/.m2 \
+    ./mvnw package -pl worker -DskipTests
+
 
 FROM buildpack-deps:bookworm AS worker
 
@@ -49,7 +56,7 @@ RUN set -xe && \
     cd /tmp/isolate && \
     git checkout v1.10.1 && \
     make -j$(nproc) install && \
-    rm -rf /tmp/* \
+    rm -rf /tmp/*
 
 ENV BOX_ROOT /var/local/lib/isolate
 WORKDIR /app

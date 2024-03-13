@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Submit Code Parameters</title>
+</head>
+<body>
+<h2>Submit Code Parameters</h2>
+<form id="myForm">
+    <label for="sourceCode">Source Code:</label><br>
+    <textarea id="sourceCode" name="sourceCode" required></textarea><br><br>
+
+    <label for="languageId">Language ID:</label><br>
+    <input type="number" id="languageId" name="languageId" required><br><br>
+
+    <label for="expectedOutput">Expected Output:</label><br>
+    <textarea id="expectedOutput" name="expectedOutput"></textarea><br><br>
+
+    <label for="stdIn">Standard Input:</label><br>
+    <textarea id="stdIn" name="stdIn"></textarea><br><br>
+
+    <label for="cpuTimeLimit">CPU Time Limit:</label><br>
+    <input type="number" id="cpuTimeLimit" name="cpuTimeLimit"><br><br>
+
+    <label for="cpuExtraTimeLimit">CPU Extra Time Limit:</label><br>
+    <input type="number" id="cpuExtraTimeLimit" name="cpuExtraTimeLimit"><br><br>
+
+    <label for="wallTimeLimit">Wall Time Limit:</label><br>
+    <input type="number" id="wallTimeLimit" name="wallTimeLimit"><br><br>
+
+    <label for="memoryLimit">Memory Limit:</label><br>
+    <input type="number" id="memoryLimit" name="memoryLimit"><br><br>
+
+    <label for="stackLimit">Stack Limit:</label><br>
+    <input type="number" id="stackLimit" name="stackLimit"><br><br>
+
+    <label for="maxProcessesAndOrThreadsLimit">Max Processes/Threads Limit:</label><br>
+    <input type="number" id="maxProcessesAndOrThreadsLimit" name="maxProcessesAndOrThreadsLimit"><br><br>
+
+    <label for="maxFileSizeLimit">Max File Size Limit:</label><br>
+    <input type="number" id="maxFileSizeLimit" name="maxFileSizeLimit"><br><br>
+
+    <button type="button" onclick="submitForm()">Submit</button>
+</form>
+
+<script>
+    function submitForm() {
+        var formData = {};
+        var form = document.getElementById("myForm");
+
+        for (var i = 0; i < form.elements.length; i++) {
+            var element = form.elements[i];
+            if (element.name && element.value.trim() !== '') {
+                formData[element.name] = element.value;
+            }
+        }
+
+        var apiUrl = window.location.origin + '/submit/';
+
+        fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Handle response data as needed
+            console.log(data);
+        })
+        .catch(error => {
+            console.error('There was a problem with the fetch operation:', error);
+        });
+    }
+</script>
+
+</body>
+</html>
